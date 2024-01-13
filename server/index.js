@@ -136,6 +136,33 @@ async function run() {
       res.send(update)
     })
 
+    app.patch('/rooms/status/:id', async (req, res) => {
+      const id = req.params.id
+      const status = req.body.status
+      const query = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          booked: status,
+        },
+      }
+      const update = await roomsCollection.updateOne(query, updateDoc)
+      res.send(update)
+    })
+
+    // Update A room
+    app.put('/rooms/:id', verifyJWT, async (req, res) => {
+      const room = req.body
+      console.log(room)
+
+      const filter = { _id: new ObjectId(req.params.id) }
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: room,
+      }
+      const result = await roomsCollection.updateOne(filter, updateDoc, options)
+      res.send(result)
+    })
+
     //get bookings for guest
     app.get('/bookings', async (req, res) => {
       const email = req.query.email
