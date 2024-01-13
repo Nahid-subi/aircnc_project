@@ -1,20 +1,24 @@
 import { createBrowserRouter } from 'react-router-dom'
 import Main from '../layouts/Main'
-import Home from '../components/pages/Home/Home'
-import Login from '../components/pages/Login/Login'
-import SignUp from '../components/pages/SignUp/SignUp'
-import RoomDetails from '../components/pages/RoomDetails/RoomDetails'
 import PrivateRoute from './PrivateRoute'
 import DashboardLayout from '../layouts/DashboardLayout'
-import AddRoom from '../components/pages/Dashboard/AddRoom'
 import { getRoom } from '../api/rooms'
-import MyBookings from '../components/pages/Dashboard/MyBookings'
-import MyListings from '../components/pages/Dashboard/MyListing'
+import Home from '../pages/Home/Home'
+import RoomDetails from '../pages/RoomDetails/RoomDetails'
+import Login from '../pages/Login/Login'
+import SignUp from '../pages/SignUp/SignUp'
+import MyBookings from '../pages/Dashboard/MyBookings'
+import AddRoom from '../pages/Dashboard/AddRoom'
+import MyListings from '../pages/Dashboard/MyListing'
+import ManageBookings from '../pages/Dashboard/ManageBookings'
+import ErrorPage from '../pages/ErrorPage'
+
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <Main />,
+    errorElement: <ErrorPage />,
     children:[
       {
         path:'/',
@@ -54,6 +58,10 @@ export const router = createBrowserRouter([
       {
         path: '/dashboard/my-listings',
         element: <MyListings/>,
+      },
+      {
+        path: '/dashboard/manage-bookings',
+        element: <ManageBookings/>,
       },
     ]
   }
