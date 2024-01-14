@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import DeleteModal from '../Modal/DeleteModal'
-import {  deleteBooking, updateStatus } from '../../api/bookings'
+import { deleteBooking, updateStatus } from '../../api/bookings'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
 const TableRow = ({ booking, fetchBookings }) => {

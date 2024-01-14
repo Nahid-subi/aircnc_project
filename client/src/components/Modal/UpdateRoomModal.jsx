@@ -29,17 +29,15 @@ const UpdateRoomModal = ({ setIsEditModalOpen, isOpen, refetch, room, id }) => {
 
   const handleSubmit = event => {
     event.preventDefault()
-    console.log(roomData)
     const updatedData = Object.assign({}, { ...roomData })
     delete updatedData._id
     setLoading(true)
     updateRoom(updatedData, id)
       .then(data => {
-        console.log(data)
         toast.success('Home info updated')
         setLoading(false)
         refetch()
-        setIsEditModalOpen(false)
+        setIsEditModalOpen(false) 
       })
       .catch(err => {
         console.log(err)
@@ -54,7 +52,6 @@ const UpdateRoomModal = ({ setIsEditModalOpen, isOpen, refetch, room, id }) => {
       from: ranges.selection.startDate,
     })
   }
-  console.log(roomData)
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog

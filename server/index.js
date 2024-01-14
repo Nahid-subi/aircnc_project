@@ -1,10 +1,12 @@
 const express = require('express')
 const app = express()
+const jwt = require('jsonwebtoken')
+const morgan = require('morgan')
 const cors = require('cors')
 require('dotenv').config()
+const nodemailer = require('nodemailer')
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const port = process.env.PORT || 5000
-const morgan = require('morgan')
-const jwt = require('jsonwebtoken')
 
 // middleware
 const corsOptions = {
@@ -15,6 +17,94 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(morgan('dev'))
+
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization
+  if (!authorization) {
+    return res.status(401).send({ error: true, message: 'unauthorized access' })
+  }
+  // bearer token
+  const token = authorization.split(' ')[1]
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res
+        .status(401)
+        .send({ error: true, message: 'unauthorized access' })
+    }
+    req.decoded = decoded
+    next()
+  })
+}
+
+// Send Email
+const sendMail = (emailData, emailAddress) => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PASS,
+    },
+
+  })
+
+  // verify connection configuration
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.log(error)
+    } else {
+      console.log('Server is ready to take our messages')
+    }
+  })
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: emailAddress,
+    subject: emailData?.subject,
+    html: `
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: 'Arial', sans-serif;
+              background-color: #f4f4f4;
+              color: #333;
+            }
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: #fff;
+              border-radius: 5px;
+              box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+              color: #007bff;
+            }
+            p {
+              line-height: 1.6;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>${emailData?.subject}</h1>
+            <p>${emailData?.message}</p>
+          </div>
+        </body>
+      </html>
+    `,
+  };
+
+  transporter.sendMail(mailOptions, function (error, info) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log('Email sent: ' + info.response);
+    }
+  });
+
+}
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.0mmsquj.mongodb.net/?retryWrites=true&w=majority`
@@ -27,36 +117,18 @@ const client = new MongoClient(uri, {
   },
 })
 
-//validate jwt
-const verifyJWT = (req, res, next) => {
-  const authorization = req.headers.authorization
-  if (!authorization) {
-    return res.status(401).send({ error: true, message: 'Unauthorized Access' })
-  }
-  const token = authorization.split(' ')[1]
-
-  // token verify
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ error: true, message: 'Unauthorized Access' })
-    }
-    req.decoded = decoded
-    next()
-  })
-}
-
 async function run() {
   try {
     const usersCollection = client.db('aircncDb').collection('users')
     const roomsCollection = client.db('aircncDb').collection('rooms')
     const bookingsCollection = client.db('aircncDb').collection('bookings')
 
+    app.post('/jwt', (req, res) => {
+      const user = req.body
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '1h',
+      })
 
-    //generate jwt token
-
-    app.post('/jwt', async (req, res) => {
-      const email = req.body
-      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '7d' })
       res.send({ token })
     })
 
@@ -73,7 +145,7 @@ async function run() {
       res.send(result)
     })
 
-    //get user room
+    // Get user
     app.get('/users/:email', async (req, res) => {
       const email = req.params.email
       const query = { email: email }
@@ -81,7 +153,7 @@ async function run() {
       res.send(result)
     })
 
-    //get all rooms
+    // Get all rooms
     app.get('/rooms', async (req, res) => {
       const result = await roomsCollection.find().toArray()
       res.send(result)
@@ -95,19 +167,15 @@ async function run() {
       res.send(result)
     })
 
-    // Get all rooms for host
+    // Get a single room
     app.get('/rooms/:email', verifyJWT, async (req, res) => {
-      const decodedEmail = req.decoded.email
       const email = req.params.email
-      if (email !== decodedEmail) {
-        return res.status(403).send({ error: true, message: 'Forbidden Access' })
-      }
       const query = { 'host.email': email }
       const result = await roomsCollection.find(query).toArray()
       res.send(result)
     })
 
-    //get a single room
+    // Get a single room
     app.get('/room/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
@@ -116,26 +184,14 @@ async function run() {
     })
 
     // Save a room in database
-    app.post('/rooms', async (req, res) => {
+    app.post('/rooms', verifyJWT, async (req, res) => {
+      console.log(req.decoded)
       const room = req.body
       const result = await roomsCollection.insertOne(room)
       res.send(result)
     })
 
-    //update room booking status
-    app.patch('/rooms/status/:id', async (req, res) => {
-      const id = req.params.id
-      const status = req.body.status
-      const query = { _id: new ObjectId(id) }
-      const updateDoc = {
-        $set: {
-          booked: status,
-        },
-      }
-      const update = await roomsCollection.updateOne(query, updateDoc)
-      res.send(update)
-    })
-
+    // update room booking status
     app.patch('/rooms/status/:id', async (req, res) => {
       const id = req.params.id
       const status = req.body.status
@@ -163,9 +219,10 @@ async function run() {
       res.send(result)
     })
 
-    //get bookings for guest
+    // Get bookings for guest
     app.get('/bookings', async (req, res) => {
       const email = req.query.email
+
       if (!email) {
         res.send([])
       }
@@ -174,9 +231,10 @@ async function run() {
       res.send(result)
     })
 
-    //get bookings for host
+    // Get bookings for host
     app.get('/bookings/host', async (req, res) => {
       const email = req.query.email
+
       if (!email) {
         res.send([])
       }
@@ -185,25 +243,56 @@ async function run() {
       res.send(result)
     })
 
+    // create payment intent
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const { price } = req.body
+      const amount = parseFloat(price) * 100
+      if (!price) return
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card'],
+      })
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      })
+    })
+
     // Save a booking in database
     app.post('/bookings', async (req, res) => {
       const booking = req.body
       const result = await bookingsCollection.insertOne(booking)
+      if (result.insertedId) {
+        // Send confirmation email to guest
+        sendMail(
+          {
+            subject: 'Booking Successful!',
+            message: `Booking Id: ${result?.insertedId}, TransactionId: ${booking.transactionId}`,
+          },
+          booking?.guest?.email
+        )
+        // Send confirmation email to host
+        sendMail(
+          {
+            subject: 'Your room got booked!',
+            message: `Booking Id: ${result?.insertedId}, TransactionId: ${booking.transactionId}. Check dashboard for more info`,
+          },
+          booking?.host
+        )
+      }
+      console.log(result)
       res.send(result)
     })
 
-    //delete a booking
+    // delete a booking
+
     app.delete('/bookings/:id', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await bookingsCollection.deleteOne(query)
       res.send(result)
     })
-
-
-
-
-
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })

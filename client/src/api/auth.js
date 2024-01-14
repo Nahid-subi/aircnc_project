@@ -12,12 +12,10 @@ export const saveUser = user => {
     body: JSON.stringify(currentUser),
   })
     .then(res => res.json())
-    .then(data => console.log(data))            
+    .then(data => console.log(data))
 }
 
-
 // become a host
-
 export const becomeHost = email => {
   const currentUser = {
     role: 'host',
@@ -29,8 +27,7 @@ export const becomeHost = email => {
       'content-type': 'application/json',
     },
     body: JSON.stringify(currentUser),
-  })
-    .then(res => res.json())
+  }).then(res => res.json())
 }
 
 // Get role

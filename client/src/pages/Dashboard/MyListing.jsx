@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react'
-import { getRooms } from '../../api/rooms'
+// import { getRooms } from '../../api/rooms'
 import { AuthContext } from '../../providers/AuthProvider'
 import RoomDataRow from '../../components/Dashboard/RoomDataRow'
 import EmptyState from '../../components/Shared/EmptyState'
@@ -18,7 +18,6 @@ const MyListings = () => {
       const res = await axiosSecure(
         `${import.meta.env.VITE_API_URL}/rooms/${user?.email}`
       )
-      console.log('res from axios', res.data)
       return res.data
     },
   })
