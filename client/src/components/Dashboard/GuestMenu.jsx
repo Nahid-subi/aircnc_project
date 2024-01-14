@@ -12,7 +12,6 @@ const GuestMenu = () => {
   const [modal, setModal] = useState(false)
   const modalHandler = email => {
     becomeHost(email).then(data => {
-      console.log(data)
       toast.success('You are host now, Post Rooms!')
       setRole('host')
       closeModal()

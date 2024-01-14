@@ -7,6 +7,7 @@ import UpdateRoomModal from '../Modal/UpdateRoomModal'
 
 const RoomDataRow = ({ room, refetch }) => {
   let [isOpen, setIsOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   function openModal() {
     setIsOpen(true)
@@ -15,10 +16,8 @@ const RoomDataRow = ({ room, refetch }) => {
     setIsOpen(false)
   }
   const modalHandler = id => {
-    console.log(id)
     deleteRoom(id)
       .then(data => {
-        console.log(data)
         refetch()
         toast.success('Room deleted')
       })

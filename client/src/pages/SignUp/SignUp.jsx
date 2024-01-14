@@ -63,7 +63,6 @@ const SignUp = () => {
                 console.log(err.message)
                 toast.error(err.message)
             })
-        console.log(url);
         return
     }
 
@@ -71,7 +70,6 @@ const SignUp = () => {
     const handleGoogleSignIn = () => {
         signInWithGoogle()
             .then(result => {
-                console.log(result.user)
         // save user to the database
                 saveUser(result.user)
                 navigate(from, { replace: true })

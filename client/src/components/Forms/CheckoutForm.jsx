@@ -25,7 +25,6 @@ const CheckoutForm = ({ bookingInfo, closeModal }) => {
       axiosSecure
         .post('/create-payment-intent', { price: bookingInfo.price })
         .then(res => {
-          console.log(res.data.clientSecret)
           setClientSecret(res.data.clientSecret)
         })
     }
@@ -53,7 +52,6 @@ const CheckoutForm = ({ bookingInfo, closeModal }) => {
       setCardError(error.message)
     } else {
       setCardError('')
-      // console.log('payment method', paymentMethod)
     }
 
     setProcessing(true)
@@ -74,7 +72,6 @@ const CheckoutForm = ({ bookingInfo, closeModal }) => {
       setCardError(confirmError.message)
     }
 
-    console.log('payment intent', paymentIntent)
 
     if (paymentIntent.status === 'succeeded') {
       // save payment information to the server
@@ -84,18 +81,16 @@ const CheckoutForm = ({ bookingInfo, closeModal }) => {
         date: new Date(),
       }
       axiosSecure.post('/bookings', paymentInfo).then(res => {
-        console.log(res.data)
         if (res.data.insertedId) {
           updateStatus(bookingInfo.roomId, true)
             .then(data => {
               setProcessing(false)
-              console.log(data)
               const text = `Booking Successful!, TransactionId: ${paymentIntent.id}`
               toast.success(text)
               navigate('/dashboard/my-bookings')
               closeModal()
             })
-            .catch(err => console.log(err))
+            .catch(err => (err))
         }
       })
     }

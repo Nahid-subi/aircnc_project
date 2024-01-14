@@ -208,7 +208,6 @@ async function run() {
     // Update A room
     app.put('/rooms/:id', verifyJWT, async (req, res) => {
       const room = req.body
-      console.log(room)
 
       const filter = { _id: new ObjectId(req.params.id) }
       const options = { upsert: true }
