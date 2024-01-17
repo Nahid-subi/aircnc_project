@@ -4,7 +4,7 @@ Welcome to AirCNC! This project is a web application built using React, Vite, Fi
 
 ## Table of Contents
 
-<a href="https://airanc-b21dc.web.app/">Live Website Link!</a>)
+<a href="https://airanc-b21dc.web.app/">Live Website Link!</a>
 
 ## Getting Started
 
